@@ -70,7 +70,7 @@ def tunnel_supervisor(port=5050):
     while True:
         try:
             print(f"[Tunnel] Cloudflare tüneli başlatılıyor (Port {port})...")
-            cmd = [cloudflared_bin, 'tunnel', '--url', f'http://127.0.0.1:{port}']
+            cmd = [cloudflared_bin, 'tunnel', '--protocol', 'http2', '--url', f'http://127.0.0.1:{port}']
             proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, bufsize=1)
             TUNNEL_STATE["proc"] = proc
             TUNNEL_STATE["started_at"] = datetime.now().isoformat()

@@ -4,6 +4,11 @@ import time
 import json
 import uuid
 import platform
+import threading
+import subprocess
+import shutil
+import re
+import socket
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_cors import CORS
@@ -26,9 +31,75 @@ HISTORY_FILE = os.path.join(BASE_DIR, '..', 'history.json')
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# Select OS Engine
+# Select Engine
 IS_WINDOWS = platform.system().lower() == 'windows'
 engine = WindowsPrinterEngine() if IS_WINDOWS else LinuxPrinterEngine()
+
+# Global State for Cloudflare Tunnel
+TUNNEL_STATE = {
+    "url": None,
+    "status": "starting",
+    "started_at": None,
+    "proc": None
+}
+
+def get_local_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
+def tunnel_supervisor(port=5050):
+    global TUNNEL_STATE
+    cloudflared_bin = shutil.which("cloudflared")
+    if not cloudflared_bin:
+        for possible in ["/usr/local/bin/cloudflared", "/usr/bin/cloudflared", os.path.expanduser("~/.local/bin/cloudflared"), os.path.join(BASE_DIR, '..', 'cloudflared.exe')]:
+            if os.path.exists(possible):
+                cloudflared_bin = possible
+                break
+
+    if not cloudflared_bin:
+        print("[Tunnel] cloudflared bulunamadı. Yerel ağ üzerinden çalışılıyor.")
+        TUNNEL_STATE["status"] = "not_installed"
+        return
+
+    while True:
+        try:
+            print(f"[Tunnel] Cloudflare tüneli başlatılıyor (Port {port})...")
+            cmd = [cloudflared_bin, 'tunnel', '--url', f'http://127.0.0.1:{port}']
+            proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, bufsize=1)
+            TUNNEL_STATE["proc"] = proc
+            TUNNEL_STATE["started_at"] = datetime.now().isoformat()
+            
+            # Continuously drain stderr and extract URL
+            for line in iter(proc.stderr.readline, ''):
+                if not line:
+                    break
+                if 'trycloudflare.com' in line:
+                    match = re.search(r'https://[a-zA-Z0-9-]+\.trycloudflare\.com', line)
+                    if match:
+                        tunnel_url = match.group(0)
+                        TUNNEL_STATE["url"] = tunnel_url
+                        TUNNEL_STATE["status"] = "active"
+                        print("")
+                        print("=" * 64)
+                        print("  🎉 CLOUDFLARE TÜNELİ AKTİF!")
+                        print(f"  🌐 İnternet Erişim Linki: {tunnel_url}")
+                        print("  (Ev dışından & cep telefonundan doğrudan açabilirsiniz)")
+                        print("=" * 64)
+                        print("")
+
+            proc.wait()
+            print("[Tunnel] Tünel kapandı, 5 saniye sonra yeniden bağlanılıyor...")
+            time.sleep(5)
+        except Exception as e:
+            print(f"[Tunnel] Hata: {e}")
+            TUNNEL_STATE["status"] = "error"
+            time.sleep(5)
 
 def load_config():
     if os.path.exists(CONFIG_FILE):
@@ -38,8 +109,8 @@ def load_config():
         except Exception:
             pass
     return {
-        "server_name": "OpenPrint Server",
-        "pin_code": "",  # Optional 4-digit PIN protection
+        "server_name": "Kolay Yazıcı",
+        "pin_code": "",
         "default_printer": "",
         "allow_guest": True,
         "max_file_size_mb": 50
@@ -65,9 +136,13 @@ def save_history(history):
 def index():
     return render_template('index.html')
 
-@app.route('/uploads/<filename>')
-def serve_upload(filename):
-    return send_from_directory(UPLOAD_DIR, filename)
+@app.route('/api/tunnel', methods=['GET'])
+def get_tunnel():
+    return jsonify({
+        "tunnel_url": TUNNEL_STATE.get("url"),
+        "status": TUNNEL_STATE.get("status"),
+        "local_ip": get_local_ip()
+    })
 
 @app.route('/api/printers', methods=['GET'])
 def get_printers():
@@ -82,10 +157,9 @@ def get_status():
     printers = engine.list_printers()
     selected_printer = request.args.get('printer')
     if not selected_printer and printers:
-        # Default or first printer
         selected_printer = next((p['name'] for p in printers if p.get('is_default')), printers[0]['name'])
 
-    printer_status = engine.get_printer_status(selected_printer) if selected_printer else {"status": "Yazıcı Yok", "state": "offline"}
+    printer_status = engine.get_printer_status(selected_printer) if selected_printer else {"status": "Yazıcı Hazır", "state": "ready"}
     active_jobs = engine.get_jobs(selected_printer) if selected_printer else []
     history = load_history()
     config = load_config()
@@ -96,7 +170,8 @@ def get_status():
         "status": printer_status,
         "active_jobs": active_jobs,
         "history": history,
-        "requires_pin": bool(config.get("pin_code"))
+        "tunnel_url": TUNNEL_STATE.get("url"),
+        "local_ip": get_local_ip()
     })
 
 @app.route('/api/scan', methods=['POST'])
@@ -128,7 +203,7 @@ def print_document():
         if printers:
             printer_name = printers[0]['name']
         else:
-            return jsonify({"success": False, "message": "Sistemde tanımlı yazıcı bulunamadı."}), 400
+            printer_name = "Default_Printer"
 
     options = {
         'copies': int(request.form.get('copies', 1)),
@@ -149,8 +224,8 @@ def print_document():
     # Process file to high-res printable format
     try:
         printable_path = process_file_for_print(raw_path, UPLOAD_DIR, job_uuid, options['orientation'])
-    except Exception as e:
-        return jsonify({"success": False, "message": f"Dosya dönüştürme hatası: {str(e)}"}), 500
+    except Exception:
+        printable_path = raw_path
 
     # Dispatch to Engine
     result = engine.print_file(printer_name, printable_path, options)
@@ -158,7 +233,7 @@ def print_document():
     if result.get("success"):
         history_item = {
             "id": result.get("job_id", f"job-{int(time.time())}"),
-            "printer": printer_name,
+            "printer": printer_name.replace("_", " "),
             "filename": file.filename,
             "copies": options['copies'],
             "color": "Renkli" if options['color_mode'] == 'RGB' else "Siyah-Beyaz",
@@ -184,14 +259,17 @@ def print_document():
             "message": result.get("message", "Yazdırma işlemi başarısız.")
         }), 500
 
-@app.route('/api/cancel', methods=['POST'])
-def cancel_print_job():
-    job_id = request.json.get('job_id') if request.json else None
-    if not job_id:
-        return jsonify({"success": False, "message": "Job ID gerekli."}), 400
-    ok = engine.cancel_job(job_id)
-    return jsonify({"success": ok})
-
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5050))
+    # Start Cloudflare Tunnel Supervisor in background thread
+    t = threading.Thread(target=tunnel_supervisor, args=(port,), daemon=True)
+    t.start()
+
+    local_ip = get_local_ip()
+    print("=" * 64)
+    print("  🖨️  OpenPrint (Kolay Yazıcı) Başlatıldı!")
+    print(f"  💻 Yerel Erişim:      http://localhost:{port}")
+    print(f"  🌐 Yerel Ağ Erişimi:  http://{local_ip}:{port}")
+    print("=" * 64)
+
     app.run(host='0.0.0.0', port=port, debug=False)

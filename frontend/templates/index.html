@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Kolay Yazıcı - OpenPrint Bulut Yazdırma</title>
+  <title>Kolay Yazıcı - Sürücüsüz Bulut Yazdırma</title>
   
   <!-- PWA Metadata -->
   <link rel="manifest" href="/static/manifest.json">
@@ -44,8 +44,8 @@
           <i class="fa-solid fa-print text-xl sm:text-2xl"></i>
         </div>
         <div>
-          <h1 id="headerTitle" class="text-lg sm:text-xl font-bold text-slate-900 leading-tight">Kolay Yazıcı</h1>
-          <p id="printerSubtitle" class="text-xs sm:text-sm text-slate-500 font-medium">Yazıcı aranıyor...</p>
+          <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 leading-tight">Kolay Yazıcı</h1>
+          <p id="printerSubtitle" class="text-xs sm:text-sm text-slate-500 font-bold">Yazıcı Aranıyor...</p>
         </div>
       </div>
 
@@ -62,6 +62,25 @@
       </div>
     </div>
   </header>
+
+  <!-- Cloudflare Tunnel Live Banner -->
+  <div id="tunnelBanner" class="hidden bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md">
+    <div class="max-w-4xl mx-auto px-4 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs sm:text-sm">
+      <div class="flex items-center space-x-2 truncate">
+        <span class="px-2 py-0.5 rounded-md bg-white/20 font-bold uppercase text-[10px] tracking-wider">İnternet Tüneli</span>
+        <span class="truncate font-medium">Telefon veya dış ağdan yazdırmak için link:</span>
+        <a id="tunnelLink" href="#" target="_blank" class="font-bold underline text-white hover:text-blue-100 truncate">https://...</a>
+      </div>
+      <div class="flex items-center space-x-2 flex-shrink-0">
+        <button type="button" onclick="copyTunnelUrl()" class="px-2.5 py-1 bg-white text-blue-700 hover:bg-blue-50 font-bold rounded-lg text-xs transition shadow-sm">
+          <i class="fa-solid fa-copy mr-1"></i> Kopyala
+        </button>
+        <button type="button" onclick="openQRModal()" class="px-2.5 py-1 bg-white/20 hover:bg-white/30 text-white font-bold rounded-lg text-xs transition">
+          <i class="fa-solid fa-qrcode mr-1"></i> QR
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Main Container -->
   <main class="max-w-4xl mx-auto px-4 pt-6 sm:pt-8">
@@ -299,9 +318,11 @@
   <div id="qrModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
     <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl border border-slate-100">
       <h3 class="text-lg font-bold text-slate-900">Yazıcı QR Kodu</h3>
-      <p class="text-xs text-slate-500">Bu QR kodu yazıcının üzerine yapıştırabilirsiniz. Aileniz veya misafirleriniz okutarak sürücü kurmadan doğrudan çıktı alabilir.</p>
+      <p class="text-xs text-slate-500">Bu QR kodu telefonunuzla okutarak sürücü kurmadan doğrudan çıktı alabilirsiniz.</p>
       
       <div id="qrcode" class="p-4 bg-white rounded-2xl inline-block shadow-inner"></div>
+
+      <p id="qrUrlText" class="text-[11px] font-mono text-blue-600 bg-blue-50 p-2 rounded-xl break-all"></p>
       
       <button type="button" onclick="closeQRModal()" class="w-full py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-200 transition">
         Kapat
@@ -333,9 +354,12 @@
     const printerSelect = document.getElementById('printerSelect');
     const printerSelectorWrap = document.getElementById('printerSelectorWrap');
     const printerSubtitle = document.getElementById('printerSubtitle');
-    const headerTitle = document.getElementById('headerTitle');
+    const tunnelBanner = document.getElementById('tunnelBanner');
+    const tunnelLink = document.getElementById('tunnelLink');
+    const qrUrlText = document.getElementById('qrUrlText');
 
     let selectedFile = null;
+    let currentTunnelUrl = null;
 
     // Copies Counter
     document.getElementById('decreaseCopy').addEventListener('click', () => {
@@ -352,21 +376,36 @@
     function openQRModal() {
       document.getElementById('qrModal').classList.remove('hidden');
       document.getElementById('qrModal').classList.add('flex');
-      if (!qrInstance) {
-        document.getElementById('qrcode').innerHTML = '';
-        qrInstance = new QRCode(document.getElementById('qrcode'), {
-          text: window.location.href,
-          width: 180,
-          height: 180,
-          colorDark : "#0f172a",
-          colorLight : "#ffffff",
-          correctLevel : QRCode.CorrectLevel.H
-        });
-      }
+      
+      const targetUrl = currentTunnelUrl || window.location.href;
+      qrUrlText.textContent = targetUrl;
+
+      document.getElementById('qrcode').innerHTML = '';
+      qrInstance = new QRCode(document.getElementById('qrcode'), {
+        text: targetUrl,
+        width: 180,
+        height: 180,
+        colorDark : "#0f172a",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+      });
     }
     function closeQRModal() {
       document.getElementById('qrModal').classList.add('hidden');
       document.getElementById('qrModal').classList.remove('flex');
+    }
+
+    function copyTunnelUrl() {
+      if (currentTunnelUrl) {
+        navigator.clipboard.writeText(currentTunnelUrl);
+        Swal.fire({
+          icon: 'success',
+          title: 'Kopyalandı!',
+          text: 'İnternet erişim linki panoya kopyalandı.',
+          timer: 1500,
+          showConfirmButton: false
+        });
+      }
     }
 
     // Dropzone Drag & Drop
@@ -513,14 +552,28 @@
 
         // Update Printer Info
         if (data.selected_printer) {
-          printerSubtitle.textContent = data.selected_printer;
+          printerSubtitle.textContent = data.selected_printer.replace(/_/g, ' ');
+        } else if (data.printers && data.printers.length > 0) {
+          printerSubtitle.textContent = data.printers[0].display_name;
+        }
+
+        // Cloudflare Tunnel
+        if (data.tunnel_url) {
+          currentTunnelUrl = data.tunnel_url;
+          tunnelLink.href = data.tunnel_url;
+          tunnelLink.textContent = data.tunnel_url;
+          tunnelBanner.classList.remove('hidden');
         }
 
         // Multi printer dropdown
         if (data.printers && data.printers.length > 1) {
           printerSelectorWrap.classList.remove('hidden');
           const cur = printerSelect.value;
-          printerSelect.innerHTML = data.printers.map(p => ).join('');
+          printerSelect.innerHTML = data.printers.map(p => `
+            <option value="${p.name}" ${p.name === data.selected_printer ? 'selected' : ''}>
+              ${p.display_name || p.name} (${p.status_text || 'Hazır'})
+            </option>
+          `).join('');
           if (cur && data.printers.some(p => p.name === cur)) {
             printerSelect.value = cur;
           }
@@ -542,7 +595,22 @@
 
         const histContainer = document.getElementById('historyContainer');
         if (data.history && data.history.length > 0) {
-          histContainer.innerHTML = data.history.slice().reverse().map(item => ).join('');
+          histContainer.innerHTML = data.history.slice().reverse().map(item => `
+            <div class="py-3 flex items-center justify-between">
+              <div class="flex items-center space-x-3 overflow-hidden">
+                <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center font-bold flex-shrink-0">
+                  <i class="fa-solid fa-print text-sm"></i>
+                </div>
+                <div class="truncate">
+                  <p class="font-bold text-slate-800 text-sm truncate">${item.filename}</p>
+                  <p class="text-xs text-slate-500"><span class="font-semibold text-slate-700">${item.copies} Kopya</span> • ${item.color} • ${item.media} • ${item.timestamp}</p>
+                </div>
+              </div>
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 flex-shrink-0">
+                Tamamlandı
+              </span>
+            </div>
+          `).join('');
         } else {
           histContainer.innerHTML = '<p class="text-slate-400 text-center py-4 font-medium">Henüz yazdırma geçmişi bulunmuyor.</p>';
         }

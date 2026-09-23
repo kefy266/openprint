@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  openprint:
+    build: .
+    container_name: openprint-app
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./uploads:/app/uploads
+      - ./config.json:/app/config.json
+      - /var/run/cups:/var/run/cups:ro
+    environment:
+      - PORT=5050
+      - PYTHONUNBUFFERED=1
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: openprint-tunnel
+    restart: unless-stopped
+    network_mode: host
+    command: tunnel --url http://127.0.0.1:5050
+    depends_on:
+      - openprint

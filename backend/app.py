@@ -35,9 +35,10 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 IS_WINDOWS = platform.system().lower() == 'windows'
 engine = WindowsPrinterEngine() if IS_WINDOWS else LinuxPrinterEngine()
 
-# Global State for Cloudflare Tunnel
+# Global State for Live Public Tunnel
 TUNNEL_STATE = {
     "url": None,
+    "provider": "LHR (Instant HTTPS)",
     "status": "starting",
     "started_at": None,
     "proc": None
@@ -55,51 +56,77 @@ def get_local_ip():
 
 def tunnel_supervisor(port=5050):
     global TUNNEL_STATE
-    cloudflared_bin = shutil.which("cloudflared")
-    if not cloudflared_bin:
-        for possible in ["/usr/local/bin/cloudflared", "/usr/bin/cloudflared", os.path.expanduser("~/.local/bin/cloudflared"), os.path.join(BASE_DIR, '..', 'cloudflared.exe')]:
-            if os.path.exists(possible):
-                cloudflared_bin = possible
-                break
-
-    if not cloudflared_bin:
-        print("[Tunnel] cloudflared bulunamadı. Yerel ağ üzerinden çalışılıyor.")
-        TUNNEL_STATE["status"] = "not_installed"
-        return
 
     while True:
+        # Provider 1: LHR SSH Tunnel (Instant Worldwide HTTPS, No DNS Delay)
         try:
-            print(f"[Tunnel] Cloudflare tüneli başlatılıyor (Port {port})...")
-            cmd = [cloudflared_bin, 'tunnel', '--protocol', 'http2', '--url', f'http://127.0.0.1:{port}']
-            proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, bufsize=1)
+            print(f"[Tunnel] Anında HTTPS tüneli açılıyor (Port {port})...")
+            ssh_bin = shutil.which("ssh") or "ssh"
+            cmd = [
+                ssh_bin,
+                "-o", "StrictHostKeyChecking=no",
+                "-o", "UserKnownHostsFile=/dev/null",
+                "-o", "ServerAliveInterval=20",
+                "-o", "ServerAliveCountMax=3",
+                "-R", f"80:127.0.0.1:{port}",
+                "nokey@localhost.run"
+            ]
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
             TUNNEL_STATE["proc"] = proc
             TUNNEL_STATE["started_at"] = datetime.now().isoformat()
-            
-            # Continuously drain stderr and extract URL
-            for line in iter(proc.stderr.readline, ''):
+
+            for line in iter(proc.stdout.readline, ''):
                 if not line:
                     break
-                if 'trycloudflare.com' in line:
-                    match = re.search(r'https://[a-zA-Z0-9-]+\.trycloudflare\.com', line)
-                    if match:
-                        tunnel_url = match.group(0)
-                        TUNNEL_STATE["url"] = tunnel_url
-                        TUNNEL_STATE["status"] = "active"
-                        print("")
-                        print("=" * 64)
-                        print("  🎉 CLOUDFLARE TÜNELİ AKTİF!")
-                        print(f"  🌐 İnternet Erişim Linki: {tunnel_url}")
-                        print("  (Ev dışından & cep telefonundan doğrudan açabilirsiniz)")
-                        print("=" * 64)
-                        print("")
+                # Match https://...lhr.life or https://...localhost.run
+                m = re.search(r'https://[a-zA-Z0-9.-]+\.lhr\.life', line) or re.search(r'https://[a-zA-Z0-9.-]+\.localhost\.run', line)
+                if m:
+                    tunnel_url = m.group(0)
+                    TUNNEL_STATE["url"] = tunnel_url
+                    TUNNEL_STATE["status"] = "active"
+                    TUNNEL_STATE["provider"] = "LHR Cloud (Anında Bağlantı)"
+                    print("")
+                    print("=" * 66)
+                    print("  🎉 İNTERNET TÜNELİ AKTİF (DNS BEKLEME YOK)!")
+                    print(f"  🌐 Canlı Erişim Linki: {tunnel_url}")
+                    print("  (Telefonunuzdan veya ev dışından hemen açıp yazdırabilirsiniz)")
+                    print("=" * 66)
+                    print("")
 
             proc.wait()
-            print("[Tunnel] Tünel kapandı, 5 saniye sonra yeniden bağlanılıyor...")
-            time.sleep(5)
         except Exception as e:
-            print(f"[Tunnel] Hata: {e}")
-            TUNNEL_STATE["status"] = "error"
-            time.sleep(5)
+            print(f"[Tunnel LHR] Hata: {e}")
+
+        # Fallback to Cloudflare if SSH fails
+        try:
+            cloudflared_bin = shutil.which("cloudflared") or "/usr/local/bin/cloudflared"
+            if os.path.exists(cloudflared_bin) or shutil.which("cloudflared"):
+                print("[Tunnel] Cloudflare tüneli deneniyor...")
+                cmd_cf = [cloudflared_bin, 'tunnel', '--protocol', 'http2', '--url', f'http://127.0.0.1:{port}']
+                proc_cf = subprocess.Popen(cmd_cf, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, bufsize=1)
+                TUNNEL_STATE["proc"] = proc_cf
+                
+                for line in iter(proc_cf.stderr.readline, ''):
+                    if not line:
+                        break
+                    if 'trycloudflare.com' in line:
+                        match_cf = re.search(r'https://[a-zA-Z0-9-]+\.trycloudflare\.com', line)
+                        if match_cf:
+                            tunnel_url = match_cf.group(0)
+                            TUNNEL_STATE["url"] = tunnel_url
+                            TUNNEL_STATE["status"] = "active"
+                            TUNNEL_STATE["provider"] = "Cloudflare Tunnel"
+                            print("")
+                            print("=" * 66)
+                            print(f"  🌐 Cloudflare Erişim Linki: {tunnel_url}")
+                            print("=" * 66)
+                            print("")
+                proc_cf.wait()
+        except Exception as e:
+            print(f"[Tunnel CF] Hata: {e}")
+
+        print("[Tunnel] Tünel koptu, 3 saniye sonra yeniden bağlanılıyor...")
+        time.sleep(3)
 
 def load_config():
     if os.path.exists(CONFIG_FILE):
@@ -141,6 +168,7 @@ def get_tunnel():
     return jsonify({
         "tunnel_url": TUNNEL_STATE.get("url"),
         "status": TUNNEL_STATE.get("status"),
+        "provider": TUNNEL_STATE.get("provider"),
         "local_ip": get_local_ip()
     })
 
@@ -261,15 +289,15 @@ def print_document():
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5050))
-    # Start Cloudflare Tunnel Supervisor in background thread
+    # Start Multi-Tunnel Supervisor in background thread
     t = threading.Thread(target=tunnel_supervisor, args=(port,), daemon=True)
     t.start()
 
     local_ip = get_local_ip()
-    print("=" * 64)
+    print("=" * 66)
     print("  🖨️  OpenPrint (Kolay Yazıcı) Başlatıldı!")
     print(f"  💻 Yerel Erişim:      http://localhost:{port}")
     print(f"  🌐 Yerel Ağ Erişimi:  http://{local_ip}:{port}")
-    print("=" * 64)
+    print("=" * 66)
 
     app.run(host='0.0.0.0', port=port, debug=False)

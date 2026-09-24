@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 echo -e "${CYAN}"
 echo "=================================================================="
 echo "    🖨️  OpenPrint (Kolay Yazıcı) Otomatik Kurulum ve Başlatıcı"
-echo "        Sürücüsüz & PWA Destekli Kişisel Bulut Yazdırma Sunucusu"
+echo "        Sürücüsüz, USB Kablolu & Wi-Fi Evrensel Yazdırma Sunucusu"
 echo "=================================================================="
 echo -e "${NC}"
 
@@ -24,7 +24,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 # 1. Check & Install System Dependencies
-echo -e "${YELLOW}[1/4] Sistem paketleri kontrol ediliyor...${NC}"
+echo -e "${YELLOW}[1/4] Sistem paketleri kontrol ediliyor (CUPS, USB ve Ağ araçları)...${NC}"
 
 if [ -f /etc/debian_version ]; then
     if [ "$EUID" -ne 0 ]; then
@@ -33,11 +33,16 @@ if [ -f /etc/debian_version ]; then
         SUDO_CMD=""
     fi
     $SUDO_CMD apt-get update -qq
-    $SUDO_CMD apt-get install -y -qq python3 python3-pip python3-venv cups cups-client cups-bsd curl >/dev/null 2>&1 || true
+    $SUDO_CMD apt-get install -y -qq python3 python3-pip python3-venv cups cups-client cups-bsd cups-ipp-utils ipp-usb curl openssh-client >/dev/null 2>&1 || true
 elif [ -f /etc/redhat-release ]; then
-    sudo dnf install -y python3 python3-pip cups cups-client curl >/dev/null 2>&1 || true
+    sudo dnf install -y python3 python3-pip cups cups-client curl openssh-clients >/dev/null 2>&1 || true
 elif [ -f /etc/arch-release ]; then
-    sudo pacman -Sy --noconfirm python python-pip cups cups-filters curl >/dev/null 2>&1 || true
+    sudo pacman -Sy --noconfirm python python-pip cups cups-filters curl openssh >/dev/null 2>&1 || true
+fi
+
+# Ensure CUPS is running
+if command -v systemctl >/dev/null 2>&1; then
+    sudo systemctl enable --now cups >/dev/null 2>&1 || true
 fi
 
 # 2. Setup Python Virtual Environment
@@ -89,9 +94,6 @@ echo -e "${GREEN}===============================================================
 echo ""
 echo -e "  🌐 ${CYAN}Yerel Ağdan Erişim:${NC}   http://${LOCAL_IP}:5050"
 echo -e "  💻 ${CYAN}Bu Cihazdan:${NC}          http://localhost:5050"
-echo ""
-echo -e "  ☁️ ${YELLOW}İnternete Açmak İçin (Port açmadan & Ücretsiz):${NC}"
-echo -e "     cloudflared tunnel --url http://127.0.0.1:5050"
 echo ""
 
 if [ "$1" != "--service" ] && [ "$1" != "-s" ]; then

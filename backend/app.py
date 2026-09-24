@@ -14,7 +14,7 @@ from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_cors import CORS
 from .engine.printer_linux import LinuxPrinterEngine
 from .engine.printer_windows import WindowsPrinterEngine
-from .engine.discovery import scan_local_printers
+from .engine.discovery import scan_all_devices, scan_usb_hardware, scan_network_printers
 from .converters import process_file_for_print
 
 app = Flask(
@@ -180,6 +180,36 @@ def get_printers():
         "printers": printers
     })
 
+@app.route('/api/printers/scan', methods=['POST', 'GET'])
+def scan_hardware():
+    """Live scan for connected USB and Network printers."""
+    try:
+        unconfigured = engine.scan_unconfigured_hardware() if hasattr(engine, 'scan_unconfigured_hardware') else []
+        all_found = scan_all_devices()
+        return jsonify({
+            "success": True,
+            "configured": engine.list_printers(),
+            "unconfigured": unconfigured,
+            "usb_hardware": all_found.get("usb_printers", []),
+            "network_hardware": all_found.get("network_printers", [])
+        })
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+@app.route('/api/printers/auto-setup', methods=['POST'])
+def auto_setup_printer():
+    """Automatically add a detected USB or Network printer to the system."""
+    data = request.json or {}
+    name = data.get('name', 'New_Printer')
+    uri = data.get('uri', '')
+    if not uri:
+        return jsonify({"success": False, "message": "URI parametresi zorunludur."}), 400
+
+    if hasattr(engine, 'auto_add_printer'):
+        res = engine.auto_add_printer(name, uri)
+        return jsonify(res)
+    return jsonify({"success": False, "message": "Bu işletim sisteminde otomatik kuyruk ekleme desteklenmiyor."}), 400
+
 @app.route('/api/status', methods=['GET'])
 def get_status():
     printers = engine.list_printers()
@@ -202,11 +232,10 @@ def get_status():
         "local_ip": get_local_ip()
     })
 
-@app.route('/api/scan', methods=['POST'])
-def discover_network_printers():
-    subnet = request.json.get('subnet', '192.168.0') if request.json else '192.168.0'
-    found = scan_local_printers(subnet)
-    return jsonify({"success": True, "discovered": found})
+@app.route('/api/jobs/<job_id>/cancel', methods=['POST'])
+def cancel_print_job(job_id):
+    success = engine.cancel_job(job_id)
+    return jsonify({"success": success})
 
 @app.route('/api/print', methods=['POST'])
 def print_document():
@@ -268,6 +297,7 @@ def print_document():
             "paper": options['page_size'],
             "media": "Fotoğraf Kağıdı" if options['media_type'] == 'PhotographicGlossy' else "Normal Kağıt",
             "orientation": "Yatay" if options['orientation'] == 'landscape' else "Dikey",
+            "duplex": "Çift Taraflı" if options['duplex'] != 'None' else "Tek Taraflı",
             "timestamp": datetime.now().strftime('%d.%m.%Y %H:%M:%S'),
             "status": "Tamamlandı"
         }
@@ -277,7 +307,7 @@ def print_document():
 
         return jsonify({
             "success": True,
-            "message": "Belge başarıyla yazıcıya gönderildi! 🖨️",
+            "message": f"Belge {printer_name.replace('_', ' ')} yazıcısına başarıyla gönderildi! 🖨️",
             "job_id": result.get("job_id"),
             "details": history_item
         })

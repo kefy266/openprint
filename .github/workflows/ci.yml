@@ -1,0 +1,38 @@
+name: OpenPrint CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install System Dependencies (CUPS & IPP Tools)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cups cups-client cups-bsd cups-ipp-utils
+
+    - name: Install Python Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run Syntax & Import Tests
+      run: |
+        python -m py_compile backend/app.py backend/converters.py backend/engine/printer_base.py backend/engine/printer_linux.py backend/engine/printer_windows.py backend/engine/discovery.py
+        python -c "import backend.app; print('Backend loaded successfully')"
+        python -c "from backend.engine.discovery import scan_all_devices; print('Discovery engine OK')"

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Kolay Yazıcı - Sürücüsüz Bulut Yazdırma</title>
+  <title>Kolay Yazıcı - Sürücüsüz Evrensel Yazdırma</title>
   
   <!-- PWA Metadata -->
   <link rel="manifest" href="/static/manifest.json">
@@ -32,6 +32,12 @@
     .custom-radio:checked + label .check-icon {
       display: flex;
     }
+    .btn-gradient {
+      background: linear-gradient(135deg, #059669 0%, #0d9488 50%, #0284c7 100%);
+    }
+    .btn-gradient:hover {
+      background: linear-gradient(135deg, #047857 0%, #0f766e 50%, #0369a1 100%);
+    }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen pb-16">
@@ -40,43 +46,53 @@
   <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
     <div class="max-w-4xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
       <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+        <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-tr from-blue-600 via-indigo-600 to-teal-500 rounded-2xl flex items-center justify-center text-white shadow-md shadow-blue-500/20">
           <i class="fa-solid fa-print text-xl sm:text-2xl"></i>
         </div>
         <div>
-          <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 leading-tight">Kolay Yazıcı</h1>
-          <p id="printerSubtitle" class="text-xs sm:text-sm text-slate-500 font-bold">Yazıcı Aranıyor...</p>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 leading-tight">Kolay Yazıcı</h1>
+            <span class="hidden sm:inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">v2.0 Evrensel</span>
+          </div>
+          <div class="flex items-center space-x-1.5 mt-0.5">
+            <span id="printerConnIcon" class="text-xs text-blue-600"><i class="fa-solid fa-plug"></i></span>
+            <p id="printerSubtitle" class="text-xs sm:text-sm text-slate-600 font-bold truncate max-w-[200px] sm:max-w-xs">Yazıcı Algılanıyor...</p>
+          </div>
         </div>
       </div>
 
       <!-- Controls & Live Status Badge -->
       <div class="flex items-center space-x-2 sm:space-x-3">
-        <button type="button" onclick="openQRModal()" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition" title="Yazıcı QR Kodunu Göster">
-          <i class="fa-solid fa-qrcode text-base"></i>
+        <button type="button" onclick="openScannerModal()" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition" title="Yazıcıları Tara / USB & Wi-Fi Ara">
+          <i class="fa-solid fa-arrows-rotate text-sm sm:text-base text-blue-600"></i>
         </button>
 
-        <div id="printerStatusBadge" class="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">
+        <button type="button" onclick="openQRModal()" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition" title="Mobil Bağlantı QR Kodu">
+          <i class="fa-solid fa-qrcode text-sm sm:text-base"></i>
+        </button>
+
+        <div id="printerStatusBadge" class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">
           <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
-          <span id="statusText">Yazıcı Hazır</span>
+          <span id="statusText">Hazır</span>
         </div>
       </div>
     </div>
   </header>
 
-  <!-- Cloudflare Tunnel Live Banner -->
-  <div id="tunnelBanner" class="hidden bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md">
+  <!-- Live Public Tunnel Banner -->
+  <div id="tunnelBanner" class="hidden bg-gradient-to-r from-blue-700 via-indigo-700 to-teal-700 text-white shadow-md">
     <div class="max-w-4xl mx-auto px-4 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs sm:text-sm">
       <div class="flex items-center space-x-2 truncate">
         <span class="px-2 py-0.5 rounded-md bg-white/20 font-bold uppercase text-[10px] tracking-wider">İnternet Tüneli</span>
-        <span class="truncate font-medium">Telefon veya dış ağdan yazdırmak için link:</span>
+        <span class="truncate font-medium">Telefon veya dış ağdan yazdırmak için:</span>
         <a id="tunnelLink" href="#" target="_blank" class="font-bold underline text-white hover:text-blue-100 truncate">https://...</a>
       </div>
       <div class="flex items-center space-x-2 flex-shrink-0">
-        <button type="button" onclick="copyTunnelUrl()" class="px-2.5 py-1 bg-white text-blue-700 hover:bg-blue-50 font-bold rounded-lg text-xs transition shadow-sm">
+        <button type="button" onclick="copyTunnelUrl()" class="px-3 py-1 bg-white text-blue-800 hover:bg-blue-50 font-bold rounded-lg text-xs transition shadow-sm">
           <i class="fa-solid fa-copy mr-1"></i> Kopyala
         </button>
-        <button type="button" onclick="openQRModal()" class="px-2.5 py-1 bg-white/20 hover:bg-white/30 text-white font-bold rounded-lg text-xs transition">
-          <i class="fa-solid fa-qrcode mr-1"></i> QR
+        <button type="button" onclick="openQRModal()" class="px-3 py-1 bg-white/20 hover:bg-white/30 text-white font-bold rounded-lg text-xs transition">
+          <i class="fa-solid fa-qrcode mr-1"></i> QR Göster
         </button>
       </div>
     </div>
@@ -85,15 +101,24 @@
   <!-- Main Container -->
   <main class="max-w-4xl mx-auto px-4 pt-6 sm:pt-8">
 
-    <!-- Multiple Printers Selector (if more than 1 printer) -->
-    <div id="printerSelectorWrap" class="hidden mb-6 bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-center justify-between gap-3">
-      <div class="flex items-center space-x-3 w-full">
-        <i class="fa-solid fa-network-wired text-blue-600 text-lg"></i>
+    <!-- Active Printer Selector Card -->
+    <div id="printerSelectorWrap" class="mb-6 bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="flex items-center space-x-3.5 w-full">
+        <div id="selectedPrinterIconWrap" class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg flex-shrink-0">
+          <i id="selectedPrinterIcon" class="fa-solid fa-plug"></i>
+        </div>
         <div class="w-full">
-          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Aktif Yazıcı Seçimi</label>
-          <select id="printerSelect" class="bg-transparent font-bold text-sm text-slate-800 focus:outline-none cursor-pointer w-full"></select>
+          <div class="flex items-center space-x-2">
+            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Aktif Yazıcı</label>
+            <span id="selectedPrinterTypeBadge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700">USB / Kablolu</span>
+          </div>
+          <select id="printerSelect" class="bg-transparent font-extrabold text-sm sm:text-base text-slate-800 focus:outline-none cursor-pointer w-full mt-0.5"></select>
         </div>
       </div>
+      
+      <button type="button" onclick="openScannerModal()" class="flex-shrink-0 inline-flex items-center justify-center px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-xs font-bold transition">
+        <i class="fa-solid fa-plus-circle mr-1.5 text-blue-600"></i> Yeni Yazıcı Ara / Ekle
+      </button>
     </div>
 
     <form id="printForm" class="space-y-6 sm:space-y-8">
@@ -103,12 +128,12 @@
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center space-x-3">
             <span class="w-7 h-7 bg-blue-100 text-blue-700 font-bold rounded-full flex items-center justify-center text-sm">1</span>
-            <h2 class="text-base sm:text-lg font-bold text-slate-900">Yazdırılacak Dosyayı Seçin</h2>
+            <h2 class="text-base sm:text-lg font-bold text-slate-900">Yazdırılacak Belge veya Fotoğraf</h2>
           </div>
 
           <!-- Camera Scan Button for Mobile -->
-          <button type="button" onclick="document.getElementById('cameraInput').click()" class="inline-flex items-center px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 text-xs font-bold hover:bg-blue-100 transition">
-            <i class="fa-solid fa-camera mr-1.5 text-sm"></i> Kamera ile Tara
+          <button type="button" onclick="document.getElementById('cameraInput').click()" class="inline-flex items-center px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100 transition">
+            <i class="fa-solid fa-camera mr-1.5 text-sm"></i> Fotoğraf Çek & Yazdır
           </button>
           <input type="file" id="cameraInput" class="hidden" accept="image/*" capture="environment">
         </div>
@@ -122,8 +147,8 @@
               <i class="fa-solid fa-cloud-arrow-up"></i>
             </div>
             <div>
-              <p class="text-base sm:text-lg font-bold text-slate-800">Dosya Seçmek İçin Dokunun</p>
-              <p class="text-xs sm:text-sm text-slate-500 mt-1">PDF, Fotoğraf (JPG, PNG, WEBP) veya Belge</p>
+              <p class="text-base sm:text-lg font-bold text-slate-800">Dosya Seçmek İçin Buraya Dokunun</p>
+              <p class="text-xs sm:text-sm text-slate-500 mt-1">PDF, Fotoğraf (JPG, PNG, WEBP), Word veya Metin Belgesi</p>
             </div>
             <button type="button" onclick="document.getElementById('fileInput').click()" class="inline-flex items-center px-4 py-2 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 active:scale-95 transition-all">
               <i class="fa-solid fa-folder-open mr-2 text-blue-600"></i> Dosyalara Göz At
@@ -138,8 +163,8 @@
                   <i class="fa-solid fa-file-pdf"></i>
                 </div>
                 <div class="truncate">
-                  <p id="fileName" class="font-bold text-slate-900 text-sm sm:text-base truncate">dosya.pdf</p>
-                  <p id="fileSize" class="text-xs text-slate-500 font-medium">2.4 MB</p>
+                  <p id="fileName" class="font-bold text-slate-900 text-sm sm:text-base truncate">belge.pdf</p>
+                  <p id="fileSize" class="text-xs text-slate-500 font-medium">1.2 MB</p>
                 </div>
               </div>
               <button type="button" id="removeFileBtn" class="text-slate-400 hover:text-rose-600 p-2 rounded-lg hover:bg-rose-50 transition-colors" title="Dosyayı Kaldır">
@@ -159,13 +184,13 @@
       <div class="bg-white rounded-2xl p-5 sm:p-7 border border-slate-200/80 shadow-sm space-y-6">
         <div class="flex items-center space-x-3">
           <span class="w-7 h-7 bg-blue-100 text-blue-700 font-bold rounded-full flex items-center justify-center text-sm">2</span>
-          <h2 class="text-base sm:text-lg font-bold text-slate-900">Yazdırma Ayarları</h2>
+          <h2 class="text-base sm:text-lg font-bold text-slate-900">Yazdırma Seçenekleri</h2>
         </div>
 
         <!-- Color Mode Selection -->
         <div>
           <label class="block text-sm font-bold text-slate-700 mb-2.5">
-            <i class="fa-solid fa-palette text-blue-600 mr-1.5"></i> Renk Seçimi
+            <i class="fa-solid fa-palette text-blue-600 mr-1.5"></i> Renk Modu
           </label>
           <div class="grid grid-cols-2 gap-3 sm:gap-4">
             <div>
@@ -177,7 +202,7 @@
                   </div>
                   <div>
                     <span class="block text-sm sm:text-base font-bold text-slate-900">Renkli</span>
-                    <span class="block text-xs text-slate-500 font-medium">Canlı ve tam renkli</span>
+                    <span class="block text-xs text-slate-500 font-medium">Canlı ve tam renkli baskı</span>
                   </div>
                 </div>
                 <div class="check-icon hidden w-5 h-5 bg-blue-600 text-white rounded-full items-center justify-center text-xs">
@@ -195,7 +220,7 @@
                   </div>
                   <div>
                     <span class="block text-sm sm:text-base font-bold text-slate-900">Siyah-Beyaz</span>
-                    <span class="block text-xs text-slate-500 font-medium">Hızlı ve tasarruflu</span>
+                    <span class="block text-xs text-slate-500 font-medium">Hızlı ve toner tasarruflu</span>
                   </div>
                 </div>
                 <div class="check-icon hidden w-5 h-5 bg-blue-600 text-white rounded-full items-center justify-center text-xs">
@@ -206,18 +231,52 @@
           </div>
         </div>
 
-        <!-- Paper Type & Orientation -->
+        <!-- Paper Size & Paper Type -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-2 border-t border-slate-100">
-          
+          <!-- Paper Size -->
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-2">
+              <i class="fa-solid fa-newspaper text-blue-600 mr-1.5"></i> Kağıt Boyutu
+            </label>
+            <select name="page_size" id="pageSize" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl px-3.5 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <option value="A4" selected>📄 A4 (Standart 210 x 297 mm)</option>
+              <option value="A3">📄 A3 (Büyük Boyut 297 x 420 mm)</option>
+              <option value="A5">📄 A5 (Küçük Boyut 148 x 210 mm)</option>
+              <option value="Letter">📄 Letter (216 x 279 mm)</option>
+              <option value="Legal">📄 Legal (216 x 356 mm)</option>
+              <option value="Photo_10x15">📸 Fotoğraf (10 x 15 cm / 4x6 inç)</option>
+              <option value="B5">📄 B5 (176 x 250 mm)</option>
+              <option value="Receipt_80mm">🧾 Termal Fiş (80 mm Rulo)</option>
+              <option value="Receipt_58mm">🧾 POS / Fiş (58 mm Rulo)</option>
+            </select>
+          </div>
+
           <!-- Media Type -->
           <div>
             <label class="block text-sm font-bold text-slate-700 mb-2">
-              <i class="fa-solid fa-scroll text-blue-600 mr-1.5"></i> Kağıt Türü
+              <i class="fa-solid fa-scroll text-blue-600 mr-1.5"></i> Kağıt Türü (Medya)
             </label>
             <select name="media_type" id="mediaType" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl px-3.5 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
-              <option value="Stationery" selected>📄 Normal Düz Kağıt (A4)</option>
-              <option value="PhotographicGlossy">📸 Parlak Fotoğraf Kağıdı</option>
-              <option value="StationeryInkjet">🖨️ Mürekkep Püskürtmeli Özel Kağıt</option>
+              <option value="Stationery" selected>Normal Standart Kağıt</option>
+              <option value="PhotographicGlossy">Parlak Fotoğraf Kağıdı (Glossy)</option>
+              <option value="StationeryInkjet">Özel Mat / Mürekkep Püskürtmeli</option>
+              <option value="Envelope">Zarf / Kalın Kartpostal</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Duplex & Orientation -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-2 border-t border-slate-100">
+          
+          <!-- Duplex (Double Sided) -->
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-2">
+              <i class="fa-solid fa-arrows-split-up-and-left text-blue-600 mr-1.5"></i> Çift Taraflı Baskı (Duplex)
+            </label>
+            <select name="duplex" id="duplexSelect" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl px-3.5 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <option value="None" selected>Tek Taraflı (Standart)</option>
+              <option value="TwoSidedLongEdge">Çift Taraflı (Uzun Kenar - Kitapçık)</option>
+              <option value="TwoSidedShortEdge">Çift Taraflı (Kısa Kenar - Takvim)</option>
             </select>
           </div>
 
@@ -264,12 +323,12 @@
           <!-- Quality -->
           <div>
             <label class="block text-sm font-bold text-slate-700 mb-2">
-              <i class="fa-solid fa-sliders text-blue-600 mr-1.5"></i> Baskı Kalitesi
+              <i class="fa-solid fa-sliders text-blue-600 mr-1.5"></i> Baskı Kalitesi & Çözünürlük
             </label>
             <select name="quality" id="printQuality" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl px-3.5 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
               <option value="Normal" selected>Standart Kalite (Önerilen)</option>
-              <option value="High">Yüksek Kalite (Fotoğraf / Net Detaylar)</option>
-              <option value="Draft">Taslak / Hızlı Baskı</option>
+              <option value="High">Yüksek Çözünürlük (Fotoğraf / Net Detaylar)</option>
+              <option value="Draft">Taslak Hızlı Baskı (Tasarruf Modu)</option>
             </select>
           </div>
         </div>
@@ -279,14 +338,14 @@
           <label class="block text-sm font-bold text-slate-700 mb-1.5">
             <i class="fa-solid fa-list-ol text-blue-600 mr-1.5"></i> Sayfa Aralığı <span class="text-xs font-normal text-slate-400">(İsteğe Bağlı)</span>
           </label>
-          <input type="text" name="page_ranges" id="pageRanges" placeholder="Tüm sayfalar için boş bırakın (veya örn: 1-3, 5)" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-sm font-medium placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <input type="text" name="page_ranges" id="pageRanges" placeholder="Tüm sayfalar için boş bırakın (veya örn: 1-3, 5, 8-10)" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm font-medium placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none">
         </div>
 
       </div>
 
       <!-- Step 3: Big Print Button -->
       <div>
-        <button type="submit" id="submitBtn" class="w-full py-4 sm:py-5 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.99] text-white font-extrabold text-lg sm:text-xl shadow-lg shadow-emerald-600/25 flex items-center justify-center space-x-3 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+        <button type="submit" id="submitBtn" class="w-full py-4 sm:py-5 px-6 rounded-2xl btn-gradient text-white font-extrabold text-lg sm:text-xl shadow-lg shadow-emerald-600/25 flex items-center justify-center space-x-3 transition-all cursor-pointer active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed">
           <i class="fa-solid fa-print text-2xl"></i>
           <span id="btnLabel">Yazıcıya Gönder ve Yazdır</span>
         </button>
@@ -298,163 +357,385 @@
     <div class="mt-10 bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-base font-bold text-slate-900 flex items-center space-x-2">
-          <i class="fa-solid fa-clock-rotate-left text-slate-500"></i>
-          <span>Son Yazdırma Geçmişi</span>
+          <i class="fa-solid fa-clock-rotate-left text-blue-600"></i>
+          <span>Son Yazdırma İşlemleri</span>
         </h3>
-        <button type="button" onclick="loadStatus()" class="text-xs font-semibold text-blue-600 hover:underline flex items-center space-x-1">
-          <i class="fa-solid fa-arrows-rotate"></i>
-          <span>Yenile</span>
-        </button>
+        <span id="historyCount" class="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">0 İşlem</span>
       </div>
 
-      <div id="historyContainer" class="divide-y divide-slate-100 text-sm">
-        <p class="text-slate-400 text-center py-4 font-medium">Henüz yazdırma geçmişi bulunmuyor.</p>
+      <div id="historyList" class="divide-y divide-slate-100">
+        <p class="text-slate-400 text-sm py-4 text-center">Henüz yazdırma geçmişi bulunmuyor.</p>
       </div>
     </div>
 
   </main>
 
-  <!-- QR Code Modal -->
-  <div id="qrModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-    <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl border border-slate-100">
-      <h3 class="text-lg font-bold text-slate-900">Yazıcı QR Kodu</h3>
-      <p class="text-xs text-slate-500">Bu QR kodu telefonunuzla okutarak sürücü kurmadan doğrudan çıktı alabilirsiniz.</p>
-      
-      <div id="qrcode" class="p-4 bg-white rounded-2xl inline-block shadow-inner"></div>
+  <!-- Hardware Scanner Modal (USB & Network discovery) -->
+  <div id="scannerModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center text-base">
+            <i class="fa-solid fa-magnifying-glass-plus"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Yazıcı Keşfi ve Ekleme</h3>
+            <p class="text-xs text-slate-500">USB kablolu veya Wi-Fi yazıcıları tarayın</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeScannerModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
 
-      <p id="qrUrlText" class="text-[11px] font-mono text-blue-600 bg-blue-50 p-2 rounded-xl break-all"></p>
-      
-      <button type="button" onclick="closeQRModal()" class="w-full py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-200 transition">
-        Kapat
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Algılanan Cihazlar</span>
+          <button type="button" onclick="triggerHardwareScan()" class="text-xs font-bold text-blue-600 hover:underline inline-flex items-center">
+            <i class="fa-solid fa-arrows-rotate mr-1"></i> Tekrar Tara
+          </button>
+        </div>
+
+        <div id="scannerResults" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+          <div class="text-center py-6 text-slate-400 text-sm">
+            <i class="fa-solid fa-circle-notch fa-spin text-2xl text-blue-500 mb-2"></i>
+            <p>USB ve Ağ Cihazları taranıyor...</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-100 flex justify-end">
+        <button type="button" onclick="closeScannerModal()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-sm transition">
+          Kapat
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Code Modal -->
+  <div id="qrModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl text-center space-y-4">
+      <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl mx-auto flex items-center justify-center text-2xl">
+        <i class="fa-solid fa-mobile-screen"></i>
+      </div>
+      <div>
+        <h3 class="text-lg font-extrabold text-slate-900">Telefondan Yazdırın</h3>
+        <p class="text-xs text-slate-500 mt-1">Telefonunuzun kamerasını aşağıdaki QR koda tutarak bu panele bağlanın.</p>
+      </div>
+
+      <div class="flex justify-center p-4 bg-slate-50 rounded-2xl border border-slate-200">
+        <div id="qrcode" class="p-2 bg-white rounded-xl shadow-sm"></div>
+      </div>
+
+      <div class="text-xs text-slate-500 break-all font-mono p-2 bg-slate-100 rounded-xl" id="qrModalUrlText">
+        http://...
+      </div>
+
+      <button type="button" onclick="closeQRModal()" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-sm transition">
+        Anladım, Kapat
       </button>
     </div>
   </div>
 
+  <!-- JavaScript Logic -->
   <script>
-    // Register PWA Service Worker
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/static/sw.js').catch(console.error);
+    let activePrinters = [];
+    let currentTunnelUrl = "";
+    let qrcodeInstance = null;
+
+    // Load initial state
+    async function loadStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+
+        // Update tunnel banner
+        if (data.tunnel_url) {
+          currentTunnelUrl = data.tunnel_url;
+          document.getElementById('tunnelBanner').classList.remove('hidden');
+          const tLink = document.getElementById('tunnelLink');
+          tLink.href = data.tunnel_url;
+          tLink.innerText = data.tunnel_url;
+        }
+
+        // Update printers
+        activePrinters = data.printers || [];
+        updatePrinterList(activePrinters, data.selected_printer);
+
+        // Update history
+        updateHistoryUI(data.history || []);
+      } catch (err) {
+        console.error("Status fetch error:", err);
+      }
     }
 
+    function updatePrinterList(printers, selectedName) {
+      const select = document.getElementById('printerSelect');
+      const subtitle = document.getElementById('printerSubtitle');
+      const icon = document.getElementById('selectedPrinterIcon');
+      const typeBadge = document.getElementById('selectedPrinterTypeBadge');
+      
+      select.innerHTML = '';
+      if (!printers || printers.length === 0) {
+        subtitle.innerText = 'Yazıcı Bulunamadı';
+        const opt = document.createElement('option');
+        opt.innerText = 'Yazıcı Algılanamadı (USB veya Ağ Kontrol Edin)';
+        select.appendChild(opt);
+        return;
+      }
+
+      printers.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.name;
+        const connLabel = p.connection_type ? ` [${p.connection_type}]` : '';
+        const defLabel = p.is_default ? ' ⭐ (Varsayılan)' : '';
+        opt.innerText = `${p.display_name}${connLabel}${defLabel}`;
+        if (selectedName && p.name === selectedName) {
+          opt.selected = true;
+        } else if (!selectedName && p.is_default) {
+          opt.selected = true;
+        }
+        select.appendChild(opt);
+      });
+
+      const current = printers.find(p => p.name === select.value) || printers[0];
+      if (current) {
+        subtitle.innerText = current.display_name;
+        typeBadge.innerText = current.connection_type || 'Kablolu / USB';
+        if (current.device_type === 'usb') {
+          icon.className = 'fa-solid fa-plug text-blue-600';
+          typeBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700';
+        } else if (current.device_type === 'network') {
+          icon.className = 'fa-solid fa-wifi text-indigo-600';
+          typeBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700';
+        } else {
+          icon.className = 'fa-solid fa-print text-slate-600';
+          typeBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700';
+        }
+      }
+    }
+
+    document.getElementById('printerSelect').addEventListener('change', function() {
+      const selected = activePrinters.find(p => p.name === this.value);
+      if (selected) {
+        document.getElementById('printerSubtitle').innerText = selected.display_name;
+        const typeBadge = document.getElementById('selectedPrinterTypeBadge');
+        const icon = document.getElementById('selectedPrinterIcon');
+        typeBadge.innerText = selected.connection_type || 'Kablolu / USB';
+        if (selected.device_type === 'usb') {
+          icon.className = 'fa-solid fa-plug text-blue-600';
+          typeBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700';
+        } else if (selected.device_type === 'network') {
+          icon.className = 'fa-solid fa-wifi text-indigo-600';
+          typeBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700';
+        } else {
+          icon.className = 'fa-solid fa-print text-slate-600';
+          typeBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700';
+        }
+      }
+    });
+
+    function updateHistoryUI(history) {
+      const container = document.getElementById('historyList');
+      const count = document.getElementById('historyCount');
+      count.innerText = `${history.length} İşlem`;
+
+      if (!history || history.length === 0) {
+        container.innerHTML = '<p class="text-slate-400 text-sm py-4 text-center">Henüz yazdırma geçmişi bulunmuyor.</p>';
+        return;
+      }
+
+      container.innerHTML = history.slice().reverse().map(item => `
+        <div class="py-3 flex items-center justify-between text-xs sm:text-sm">
+          <div class="flex items-center space-x-3 truncate">
+            <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+              <i class="fa-solid fa-file-lines"></i>
+            </div>
+            <div class="truncate">
+              <p class="font-bold text-slate-900 truncate">${item.filename}</p>
+              <p class="text-slate-500 text-xs">${item.printer} • ${item.copies} Kopya • ${item.color} • ${item.paper || 'A4'}</p>
+            </div>
+          </div>
+          <div class="text-right flex-shrink-0 ml-3">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+              ${item.status}
+            </span>
+            <p class="text-[10px] text-slate-400 mt-0.5">${item.timestamp}</p>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Hardware Scanner Modal Functions
+    function openScannerModal() {
+      document.getElementById('scannerModal').classList.remove('hidden');
+      triggerHardwareScan();
+    }
+
+    function closeScannerModal() {
+      document.getElementById('scannerModal').classList.add('hidden');
+    }
+
+    async function triggerHardwareScan() {
+      const resultsDiv = document.getElementById('scannerResults');
+      resultsDiv.innerHTML = `
+        <div class="text-center py-6 text-slate-400 text-sm">
+          <i class="fa-solid fa-circle-notch fa-spin text-2xl text-blue-500 mb-2"></i>
+          <p>USB Portları ve Yerel Ağ taranıyor...</p>
+        </div>
+      `;
+
+      try {
+        const res = await fetch('/api/printers/scan', { method: 'POST' });
+        const data = await res.json();
+        
+        let html = '';
+        const unconfigured = data.unconfigured || [];
+        const usbHw = data.usb_hardware || [];
+        const netHw = data.network_hardware || [];
+        const configured = data.configured || [];
+
+        html += `<div class="text-[11px] font-bold text-slate-400 mb-1">Kullanıma Hazır Yazıcılar (${configured.length})</div>`;
+        configured.forEach(p => {
+          html += `
+            <div class="p-2.5 bg-slate-50 rounded-xl flex items-center justify-between border border-slate-200">
+              <div class="flex items-center space-x-2.5 truncate">
+                <i class="${p.icon || 'fa-solid fa-print'} text-blue-600"></i>
+                <div class="truncate">
+                  <span class="font-bold text-xs text-slate-800">${p.display_name}</span>
+                  <span class="block text-[10px] text-slate-500">${p.connection_type || 'Yerel'}</span>
+                </div>
+              </div>
+              <span class="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">Aktif / Bağlı</span>
+            </div>
+          `;
+        });
+
+        if (unconfigured.length > 0 || usbHw.length > 0) {
+          html += `<div class="text-[11px] font-bold text-blue-600 mt-3 mb-1">Yeni Algılanan Kablolu / USB Cihazlar</div>`;
+          const allNew = [...unconfigured, ...usbHw];
+          allNew.forEach(item => {
+            html += `
+              <div class="p-2.5 bg-blue-50/70 rounded-xl flex items-center justify-between border border-blue-200">
+                <div class="flex items-center space-x-2.5 truncate">
+                  <i class="fa-solid fa-plug text-blue-600"></i>
+                  <div class="truncate">
+                    <span class="font-bold text-xs text-slate-900">${item.name || item.display_name}</span>
+                    <span class="block text-[10px] text-slate-500">${item.type || item.uri}</span>
+                  </div>
+                </div>
+                <button type="button" onclick="autoSetupPrinter('${item.name}', '${item.uri}')" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-sm">
+                  Kuyruk Ekle
+                </button>
+              </div>
+            `;
+          });
+        }
+
+        resultsDiv.innerHTML = html || '<p class="text-xs text-slate-400 py-3 text-center">Başka aygıt algılanamadı.</p>';
+      } catch (e) {
+        resultsDiv.innerHTML = `<p class="text-xs text-rose-500 py-3 text-center">Tarama sırasında hata oluştu: ${e.message}</p>`;
+      }
+    }
+
+    async function autoSetupPrinter(name, uri) {
+      try {
+        const res = await fetch('/api/printers/auto-setup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, uri })
+        });
+        const data = await res.json();
+        if (data.success) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Yazıcı Eklendi!',
+            text: data.message,
+            confirmButtonColor: '#2563eb'
+          });
+          loadStatus();
+          triggerHardwareScan();
+        } else {
+          Swal.fire({ icon: 'error', title: 'Hata', text: data.message });
+        }
+      } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Hata', text: err.message });
+      }
+    }
+
+    // QR Code Modal
+    function openQRModal() {
+      const modal = document.getElementById('qrModal');
+      const targetUrl = currentTunnelUrl || window.location.href;
+      document.getElementById('qrModalUrlText').innerText = targetUrl;
+      
+      const qrContainer = document.getElementById('qrcode');
+      qrContainer.innerHTML = '';
+      qrcodeInstance = new QRCode(qrContainer, {
+        text: targetUrl,
+        width: 180,
+        height: 180,
+        colorDark: "#0f172a",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeQRModal() {
+      document.getElementById('qrModal').classList.add('hidden');
+    }
+
+    function copyTunnelUrl() {
+      const url = currentTunnelUrl || window.location.href;
+      navigator.clipboard.writeText(url).then(() => {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'Link panoya kopyalandı!',
+          showConfirmButton: false,
+          timer: 2000
+        });
+      });
+    }
+
+    // Copy Counter
+    const copiesInput = document.getElementById('copiesInput');
+    document.getElementById('increaseCopy').addEventListener('click', () => {
+      let val = parseInt(copiesInput.value) || 1;
+      if (val < 99) copiesInput.value = val + 1;
+    });
+    document.getElementById('decreaseCopy').addEventListener('click', () => {
+      let val = parseInt(copiesInput.value) || 1;
+      if (val > 1) copiesInput.value = val - 1;
+    });
+
+    // File Drop & Selection Logic
     const fileInput = document.getElementById('fileInput');
     const cameraInput = document.getElementById('cameraInput');
     const dropzone = document.getElementById('dropzone');
     const uploadPrompt = document.getElementById('uploadPrompt');
     const filePreviewContainer = document.getElementById('filePreviewContainer');
-    const fileNameEl = document.getElementById('fileName');
-    const fileSizeEl = document.getElementById('fileSize');
-    const fileIconEl = document.getElementById('fileIcon');
-    const removeFileBtn = document.getElementById('removeFileBtn');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const fileIcon = document.getElementById('fileIcon');
     const imageThumbnailWrap = document.getElementById('imageThumbnailWrap');
     const imageThumbnail = document.getElementById('imageThumbnail');
-    const printForm = document.getElementById('printForm');
-    const submitBtn = document.getElementById('submitBtn');
-    const btnLabel = document.getElementById('btnLabel');
-    const copiesInput = document.getElementById('copiesInput');
-    const printerSelect = document.getElementById('printerSelect');
-    const printerSelectorWrap = document.getElementById('printerSelectorWrap');
-    const printerSubtitle = document.getElementById('printerSubtitle');
-    const tunnelBanner = document.getElementById('tunnelBanner');
-    const tunnelLink = document.getElementById('tunnelLink');
-    const qrUrlText = document.getElementById('qrUrlText');
+    const removeFileBtn = document.getElementById('removeFileBtn');
 
-    let selectedFile = null;
-    let currentTunnelUrl = null;
+    let currentSelectedFile = null;
 
-    // Copies Counter
-    document.getElementById('decreaseCopy').addEventListener('click', () => {
-      let val = parseInt(copiesInput.value) || 1;
-      if (val > 1) copiesInput.value = val - 1;
-    });
-    document.getElementById('increaseCopy').addEventListener('click', () => {
-      let val = parseInt(copiesInput.value) || 1;
-      if (val < 99) copiesInput.value = val + 1;
-    });
+    function handleFile(file) {
+      if (!file) return;
+      currentSelectedFile = file;
+      fileName.innerText = file.name;
+      fileSize.innerText = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
 
-    // QR Modal
-    let qrInstance = null;
-    function openQRModal() {
-      document.getElementById('qrModal').classList.remove('hidden');
-      document.getElementById('qrModal').classList.add('flex');
-      
-      const targetUrl = currentTunnelUrl || window.location.href;
-      qrUrlText.textContent = targetUrl;
-
-      document.getElementById('qrcode').innerHTML = '';
-      qrInstance = new QRCode(document.getElementById('qrcode'), {
-        text: targetUrl,
-        width: 180,
-        height: 180,
-        colorDark : "#0f172a",
-        colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.H
-      });
-    }
-    function closeQRModal() {
-      document.getElementById('qrModal').classList.add('hidden');
-      document.getElementById('qrModal').classList.remove('flex');
-    }
-
-    function copyTunnelUrl() {
-      if (currentTunnelUrl) {
-        navigator.clipboard.writeText(currentTunnelUrl);
-        Swal.fire({
-          icon: 'success',
-          title: 'Kopyalandı!',
-          text: 'İnternet erişim linki panoya kopyalandı.',
-          timer: 1500,
-          showConfirmButton: false
-        });
-      }
-    }
-
-    // Dropzone Drag & Drop
-    ['dragenter', 'dragover'].forEach(eventName => {
-      dropzone.addEventListener(eventName, (e) => {
-        e.preventDefault();
-        dropzone.classList.add('border-blue-500', 'bg-blue-50/50');
-      }, false);
-    });
-
-    ['dragleave', 'drop'].forEach(eventName => {
-      dropzone.addEventListener(eventName, (e) => {
-        e.preventDefault();
-        dropzone.classList.remove('border-blue-500', 'bg-blue-50/50');
-      }, false);
-    });
-
-    dropzone.addEventListener('drop', (e) => {
-      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-        handleFileSelect(e.dataTransfer.files[0]);
-      }
-    });
-
-    fileInput.addEventListener('change', (e) => {
-      if (e.target.files && e.target.files.length > 0) handleFileSelect(e.target.files[0]);
-    });
-
-    cameraInput.addEventListener('change', (e) => {
-      if (e.target.files && e.target.files.length > 0) handleFileSelect(e.target.files[0]);
-    });
-
-    function formatBytes(bytes) {
-      if (bytes === 0) return '0 Bytes';
-      const k = 1024;
-      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
-    function handleFileSelect(file) {
-      selectedFile = file;
-      fileNameEl.textContent = file.name;
-      fileSizeEl.textContent = formatBytes(file.size);
-
-      const ext = file.name.split('.').pop().toLowerCase();
-      if (['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'].includes(ext)) {
-        fileIconEl.className = 'w-11 h-11 bg-emerald-100 text-emerald-600 rounded-lg flex-shrink-0 flex items-center justify-center text-xl font-bold';
-        fileIconEl.innerHTML = '<i class="fa-solid fa-image"></i>';
-        
+      if (file.type.startsWith('image/')) {
+        fileIcon.innerHTML = '<i class="fa-solid fa-file-image"></i>';
+        fileIcon.className = 'w-11 h-11 bg-indigo-100 text-indigo-600 rounded-lg flex-shrink-0 flex items-center justify-center text-xl font-bold';
         const reader = new FileReader();
         reader.onload = (e) => {
           imageThumbnail.src = e.target.result;
@@ -462,8 +743,8 @@
         };
         reader.readAsDataURL(file);
       } else {
-        fileIconEl.className = 'w-11 h-11 bg-rose-100 text-rose-600 rounded-lg flex-shrink-0 flex items-center justify-center text-xl font-bold';
-        fileIconEl.innerHTML = '<i class="fa-solid fa-file-pdf"></i>';
+        fileIcon.innerHTML = '<i class="fa-solid fa-file-pdf"></i>';
+        fileIcon.className = 'w-11 h-11 bg-rose-100 text-rose-600 rounded-lg flex-shrink-0 flex items-center justify-center text-xl font-bold';
         imageThumbnailWrap.classList.add('hidden');
       }
 
@@ -471,63 +752,91 @@
       filePreviewContainer.classList.remove('hidden');
     }
 
+    fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+    cameraInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
     removeFileBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      selectedFile = null;
+      currentSelectedFile = null;
       fileInput.value = '';
       cameraInput.value = '';
-      imageThumbnail.src = '';
-      imageThumbnailWrap.classList.add('hidden');
       filePreviewContainer.classList.add('hidden');
       uploadPrompt.classList.remove('hidden');
     });
 
-    // Submit Form
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('border-blue-500', 'bg-blue-50/50');
+    });
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('border-blue-500', 'bg-blue-50/50');
+    });
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('border-blue-500', 'bg-blue-50/50');
+      if (e.dataTransfer.files.length > 0) {
+        handleFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    // Form Submit
+    const printForm = document.getElementById('printForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnLabel = document.getElementById('btnLabel');
+
     printForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-
-      if (!selectedFile) {
+      if (!currentSelectedFile) {
         Swal.fire({
           icon: 'warning',
           title: 'Dosya Seçilmedi',
-          text: 'Lütfen yazdırmak istediğiniz PDF veya fotoğraf dosyasını seçin.',
+          text: 'Lütfen yazdırmak için bir dosya veya fotoğraf seçin.',
           confirmButtonColor: '#2563eb'
         });
         return;
       }
 
-      const formData = new FormData(printForm);
-      formData.set('file', selectedFile);
-      if (printerSelect && printerSelect.value) {
-        formData.set('printer', printerSelect.value);
-      }
-
       submitBtn.disabled = true;
-      btnLabel.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Yazıcıya İletiliyor...';
+      btnLabel.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Yazıcıya Gönderiliyor...';
+
+      const formData = new FormData();
+      formData.append('file', currentSelectedFile);
+      formData.append('printer', document.getElementById('printerSelect').value);
+      formData.append('color_mode', document.querySelector('input[name="color_mode"]:checked').value);
+      formData.append('page_size', document.getElementById('pageSize').value);
+      formData.append('media_type', document.getElementById('mediaType').value);
+      formData.append('duplex', document.getElementById('duplexSelect').value);
+      formData.append('orientation', document.querySelector('input[name="orientation"]:checked').value);
+      formData.append('copies', copiesInput.value);
+      formData.append('quality', document.getElementById('printQuality').value);
+      formData.append('page_ranges', document.getElementById('pageRanges').value);
 
       try {
-        const resp = await fetch('/api/print', {
+        const res = await fetch('/api/print', {
           method: 'POST',
           body: formData
         });
+        const data = await res.json();
 
-        const data = await resp.json();
-
-        if (resp.ok && data.success) {
+        if (data.success) {
           Swal.fire({
             icon: 'success',
-            title: 'Yazıcıya Gönderildi! 🖨️',
-            text: 'Belgeniz yazıcıya aktarıldı ve yazdırılıyor.',
+            title: 'Baskı Başlatıldı! 🖨️',
+            text: data.message,
             confirmButtonColor: '#059669'
           });
-
-          removeFileBtn.click();
+          // Reset file
+          currentSelectedFile = null;
+          fileInput.value = '';
+          cameraInput.value = '';
+          filePreviewContainer.classList.add('hidden');
+          uploadPrompt.classList.remove('hidden');
           loadStatus();
         } else {
           Swal.fire({
             icon: 'error',
             title: 'Yazdırma Başarısız',
-            text: data.message || 'Bilinmeyen bir hata meydana geldi.',
+            text: data.message || 'Yazıcıya ulaşılamadı.',
             confirmButtonColor: '#dc2626'
           });
         }
@@ -535,93 +844,18 @@
         Swal.fire({
           icon: 'error',
           title: 'Bağlantı Hatası',
-          text: 'Sunucuya bağlanırken bir sorun oluştu: ' + err.message,
+          text: err.message,
           confirmButtonColor: '#dc2626'
         });
       } finally {
         submitBtn.disabled = false;
-        btnLabel.innerHTML = 'Yazıcıya Gönder ve Yazdır';
+        btnLabel.innerText = 'Yazıcıya Gönder ve Yazdır';
       }
     });
 
-    // Load Printer Status & History
-    async function loadStatus() {
-      try {
-        const resp = await fetch('/api/status');
-        const data = await resp.json();
-
-        // Update Printer Info
-        if (data.selected_printer) {
-          printerSubtitle.textContent = data.selected_printer.replace(/_/g, ' ');
-        } else if (data.printers && data.printers.length > 0) {
-          printerSubtitle.textContent = data.printers[0].display_name;
-        }
-
-        // Cloudflare Tunnel
-        if (data.tunnel_url) {
-          currentTunnelUrl = data.tunnel_url;
-          tunnelLink.href = data.tunnel_url;
-          tunnelLink.textContent = data.tunnel_url;
-          tunnelBanner.classList.remove('hidden');
-        }
-
-        // Multi printer dropdown
-        if (data.printers && data.printers.length > 1) {
-          printerSelectorWrap.classList.remove('hidden');
-          const cur = printerSelect.value;
-          printerSelect.innerHTML = data.printers.map(p => `
-            <option value="${p.name}" ${p.name === data.selected_printer ? 'selected' : ''}>
-              ${p.display_name || p.name} (${p.status_text || 'Hazır'})
-            </option>
-          `).join('');
-          if (cur && data.printers.some(p => p.name === cur)) {
-            printerSelect.value = cur;
-          }
-        }
-
-        const badge = document.getElementById('printerStatusBadge');
-        const statusText = document.getElementById('statusText');
-
-        if (data.status && (data.status.state === 'ready' || data.status.state === 'online' || data.status.state === 'idle')) {
-          badge.className = 'inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm';
-          statusText.textContent = 'Yazıcı Hazır';
-        } else if (data.status && data.status.state === 'busy') {
-          badge.className = 'inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold bg-amber-50 text-amber-700 border border-amber-200 shadow-sm';
-          statusText.textContent = 'Yazdırılıyor...';
-        } else {
-          badge.className = 'inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold bg-slate-100 text-slate-600 border border-slate-200 shadow-sm';
-          statusText.textContent = data.status ? (data.status.status || 'Hazır') : 'Hazır';
-        }
-
-        const histContainer = document.getElementById('historyContainer');
-        if (data.history && data.history.length > 0) {
-          histContainer.innerHTML = data.history.slice().reverse().map(item => `
-            <div class="py-3 flex items-center justify-between">
-              <div class="flex items-center space-x-3 overflow-hidden">
-                <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center font-bold flex-shrink-0">
-                  <i class="fa-solid fa-print text-sm"></i>
-                </div>
-                <div class="truncate">
-                  <p class="font-bold text-slate-800 text-sm truncate">${item.filename}</p>
-                  <p class="text-xs text-slate-500"><span class="font-semibold text-slate-700">${item.copies} Kopya</span> • ${item.color} • ${item.media} • ${item.timestamp}</p>
-                </div>
-              </div>
-              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 flex-shrink-0">
-                Tamamlandı
-              </span>
-            </div>
-          `).join('');
-        } else {
-          histContainer.innerHTML = '<p class="text-slate-400 text-center py-4 font-medium">Henüz yazdırma geçmişi bulunmuyor.</p>';
-        }
-
-      } catch (e) {
-        console.error('Status check error:', e);
-      }
-    }
-
+    // Initial polling
     loadStatus();
-    setInterval(loadStatus, 4000);
+    setInterval(loadStatus, 6000);
   </script>
 </body>
 </html>

@@ -37,7 +37,7 @@
 
 ```bash
 # 1. Depoyu klonlayın
-git clone https://github.com/KULLANICI_ADINIZ/openprint.git
+git clone https://github.com/kefy266/openprint.git
 cd openprint
 
 # 2. Kurulum ve Başlatma (Tüm bağımlılıklar otomatik kurulur)

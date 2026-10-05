@@ -58,6 +58,34 @@ chmod +x install.sh run.sh
 2. Klasör içindeki `baslat.bat` veya `run.bat` dosyasına **çift tıklayın**.
 3. Sistem otomatik olarak Python ortamını hazırlar ve sunucuyu başlatır.
 
+#### Python bulunamadı hatası mı alıyorsunuz?
+
+Windows 10/11'de `python` yazdığınızda Microsoft Store açılıp
+`Python was not found; run without arguments to install from the Microsoft
+Store` yazısı çıkabiliyor. Bu bir OpenPrint hatası değil, Windows'un
+"Uygulama yürütme kısayolları" özelliği. Betik bu durumu tanıyıp sizi
+doğrudan yönlendirir:
+
+- **Betik kendisi çözerse:** `winget` ile Python 3.12 kurar. Kurulumdan
+  sonra pencereyi kapatıp betiği **yeniden** çalıştırın (PATH güncellenmesi
+  gerekiyor).
+- **Elle kuracaksanız:** https://www.python.org adresinden Python 3.10 veya
+  üzeri sürümü indirin. Kurulum ekranındaki **"Add python.exe to PATH"**
+  kutusunu mutlaka işaretleyin. Ayrıca *Windows Ayarları → Uygulamalar →
+  Gelişmiş uygulama ayarları → Uygulama yürütme kısayolları* bölümündeki
+  `python.exe` ve `python3.exe` kısayollarını kapatabilirsiniz.
+
+> **Geliştiriciler için:** `.bat` dosyaları bilerek **Windows-857** kodlaması
+> ve **CRLF** satır sonu ile saklanır. Git'e dosyaları yüklerken veya bir
+> metin düzenleyicide kaydederken bu ayarları bozmayın; aksi halde cmd.exe
+> satırların başındaki karakterleri yutuyor ve şu çöp akışı oluşuyor:
+>
+> ```
+> 'ndows' is not recognized as an internal or external command
+> ```
+>
+> Denetim için: `python3 tools/fix_windows_bat.py --check`
+
 ---
 
 ## 📦 Docker ile Çalıştırma
@@ -114,8 +142,13 @@ openprint/
 │       └── sw.js                 # Service Worker
 ├── install.sh                    # Linux tek tık kurulum betiği
 ├── run.sh                        # Linux hızlı başlatıcı
-├── install.bat                   # Windows kurulum betiği
-├── baslat.bat                    # Windows tek tık başlatıcı
+├── install.bat                   # Windows kurulum betiği (cp857 + CRLF)
+├── baslat.bat                    # Windows tek tık başlatıcı (cp857 + CRLF)
+├── run.bat                       # Windows hızlı başlatıcı (cp857 + CRLF)
+├── scripts/
+│   └── install_windows.bat       # Windows kurulum giriş noktası
+├── tools/
+│   └── fix_windows_bat.py        # .bat üretici + kodlama denetleyici
 ├── docker-compose.yml            # Docker yapılandırması
 ├── Dockerfile                    # Container imajı
 ├── requirements.txt              # Python bağımlılıkları

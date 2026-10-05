@@ -36,3 +36,50 @@ jobs:
         python -m py_compile backend/app.py backend/converters.py backend/engine/printer_base.py backend/engine/printer_linux.py backend/engine/printer_windows.py backend/engine/discovery.py
         python -c "import backend.app; print('Backend loaded successfully')"
         python -c "from backend.engine.discovery import scan_all_devices; print('Discovery engine OK')"
+
+  windows-batch:
+    # cmd.exe .bat dosyasini BAYT KONUMUNA gore ayristirir. Satir sonu LF
+    # oldugunda satir basina 1 bayt ilerler (CRLF'de 2). Dosyada Turkce
+    # harf veya emoji gibi cok baytli karakterler bulundugunda imlec yanlis
+    # konuma kayar, sonraki her komutun basindaki karakterler yutulur ve
+    # kurulum su cascagi uretir:
+    #     'ndows' is not recognized as an internal or external command
+    # Bu bir kurulum hatasi degil, kodlama/satir sonu hatasidir. Bu is
+    # yordami o hatayi CI'da yakalar.
+    name: Windows batch dosyaları denetimi
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Kodlama ve satır sonu denetimi
+      run: python3 tools/fix_windows_bat.py --check
+
+    - name: Gerçek cmd.exe ile ayrıştırma testi
+      run: |
+        sudo apt-get update
+        # Paket adi surume gore degisiyor: Ubuntu 22.04'de wine64,
+        # 24.04 ve sonrasinda wine meta paketi var. Ikisini de dene.
+        sudo apt-get install -y wine64 || sudo apt-get install -y wine
+        export WINEPREFIX="$RUNNER_TEMP/wineprefix"
+        export WINEDEBUG=-all
+        wineboot -i >/dev/null 2>&1 || true
+        wineboot -i >/dev/null 2>&1
+
+        WORK="$RUNNER_TEMP/bt"
+        mkdir -p "$WORK/scripts"
+        cp install.bat baslat.bat run.bat requirements.txt "$WORK/"
+        cp scripts/install_windows.bat "$WORK/scripts/"
+        cd "$WORK"
+
+        # Betikler Python bulunamadan once hata verip durmali. Cikti
+        # kisalmamis, Turkce karakterler bozulmamis olmali.
+        for f in install.bat baslat.bat run.bat 'scripts\install_windows.bat'; do
+          wine cmd /c "$f" >> all.txt 2>/dev/null || true
+        done
+
+        python3 tools/fix_windows_bat.py --verify-output=all.txt
+
+        # "is not recognized" turu bir ayristirma hatasidir, hicbir kosulda
+        # gorunmemelidir.
+        ! grep -q "is not recognized" all.txt

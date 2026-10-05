@@ -1,0 +1,30 @@
+# OpenPrint — satır sonu ve dosya tipi kuralları
+#
+# Neden bu dosya var:
+#
+# cmd.exe bir .bat dosyasını BAYT KONUMUNA göre ayrıştırır. Satır sonu LF
+# olduğunda satır başına 1 bayt ilerler, CRLF'de 2. Dosyada Türkçe harf
+# veya emoji gibi çok baytlı değerler bulunduğunda imleç yanlış konuma
+# kayar, sonraki her komutun başındaki karakterler yutulur ve şöyle bir
+# çöp akışı oluşur:
+#
+#     'ndows' is not recognized as an internal or external command
+#
+# Bu bir kod hatası değil, kodlama/satır sonu hatasıdır.
+#
+# `text eol=crlf` yazılım çalıştırılan işletim sisteminden bağımsız olarak
+# dosyanın CRLF ile indirilmesini garanti eder; böylece Linux veya macOS'ta
+# düzenlenip Windows'ta çalıştırıldığında sorun yeniden oluşmaz.
+#
+# Not: .bat dosyalarının İÇERİĞİ cp857 (Windows-857) kodlamasındadır ve bu
+# depoda bayt olarak saklanır. Git içeriği normalleştirmez, yalnızca satır
+# sonlarını CRLF'e çevirir. Kodlama denetimi CI'da ayrıca yapılır:
+#     python tools/fix_windows_bat.py
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+# Linux/macOS betikleri LF kalmali; CRLF bash'ta komut bulunamaz hatası verir.
+*.sh   text eol=lf
+
+# Python kaynak dosyaları
+*.py   text eol=lf

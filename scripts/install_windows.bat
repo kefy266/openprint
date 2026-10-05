@@ -1,55 +1,20 @@
 @echo off
-chcp 65001 >nul
-title OpenPrint / Kolay YazÄ±cÄ± - Windows Kurulum ve BaÅŸlatÄ±cÄ±
-color 0B
-
-echo ==================================================================
-echo     ğŸ–¨ï¸  OpenPrint (Kolay YazÄ±cÄ±) - Windows 1-TÄ±k Kurulum
-echo         SÃ¼rÃ¼cÃ¼sÃ¼z & PWA Destekli KiÅŸisel Bulut YazdÄ±rma Sunucusu
-echo ==================================================================
-echo.
-
-cd /d "%~dp0"
-
-:: 1. Python KontrolÃ¼
-python --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [!] Python sisteminizde bulunamadÄ±.
-    echo [*] Python otomatik olarak kuruluyor... (winget)
-    winget install Python.Python.3.12 --silent --accept-package-agreements --accept-source-agreements >nul 2>&1
-    if %errorlevel% neq 0 (
-        echo [HATA] Python kurulamadÄ±! LÃ¼tfen https://www.python.org adresinden indirip kurun.
-        echo Kurulum sÄ±rasÄ±nda "Add python.exe to PATH" seÃ§eneÄŸini iÅŸaretlemeyi unutmayÄ±n.
-        pause
-        exit /b 1
-    )
-)
-
-:: 2. Sanal Ortam ve Paket Kurulumu
-if not exist "venv" (
-    echo [1/3] Python sanal ortamÄ± oluÅŸturuluyor (venv)...
-    python -m venv venv
-    call venv\Scripts\activate.bat
-    echo [2/3] Gerekli paketler yÃ¼kleniyor (Flask, Pillow, PyPDF)...
-    python -m pip install --upgrade pip --quiet
-    pip install -r requirements.txt --quiet
-) else (
-    call venv\Scripts\activate.bat
-)
-
-echo.
-echo [3/3] OpenPrint BaÅŸlatÄ±lÄ±yor...
-echo.
-echo ==================================================================
-echo   ğŸŒ Yerel EriÅŸim: http://localhost:5050
-echo   ğŸ–¨ï¸ YazÄ±cÄ±nÄ±z otomatik olarak algÄ±landÄ±.
-echo ==================================================================
-echo.
-
-:: TarayÄ±cÄ±yÄ± otomatik aÃ§
-start http://localhost:5050
-
-:: Backend'i Ã§alÄ±ÅŸtÄ±r
-python -m backend.app
-
-pause
+REM ===================================================================
+REM  OpenPrint - scripts\ klas”r i‡indeki kurulum giriŸ noktas
+REM
+REM  Ger‡ek iŸ mant§ k”k dizindeki install.bat dosyasndadr; burada
+REM  yalnzca y”nlendirilir, b”ylece iki kopyas bakm gerektirmez.
+REM
+REM  Dosya kurallar (bilerek):
+REM    kodlama   : Windows-857 (Trk‡e OEM, tek bayt/karakter)
+REM    satr sonu: CRLF
+REM    BOM yok, chcp yok, emoji yok
+REM
+REM  Bu kurallar bozulursa cmd.exe satrlarn baŸndaki karakterleri
+REM  yutar ve Ÿ”yle bir ‡”p akŸ g”rnr:
+REM    'ndows' is not recognized as an internal or external command
+REM  Bu bir kod hatas de§il, kodlama hatasdr.
+REM ===================================================================
+cd /d "%~dp0.."
+call "%~dp0..\install.bat"
+exit /b %errorlevel%

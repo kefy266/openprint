@@ -12,16 +12,20 @@
 #
 # Bu bir kod hatası değil, kodlama/satır sonu hatasıdır.
 #
-# `text eol=crlf` yazılım çalıştırılan işletim sisteminden bağımsız olarak
-# dosyanın CRLF ile indirilmesini garanti eder; böylece Linux veya macOS'ta
-# düzenlenip Windows'ta çalıştırıldığında sorun yeniden oluşmaz.
+# -text: git satır sonlarını NORMALLEŞTİRMEZ, baytları olduğu gibi saklar.
+# Burada `text eol=crlf` kullanmak yanlış olurdu: o durumda gösterge (index)
+# LF'ye çevrilir ve raw.githubusercontent.com ile tek dosya indiren kullanıcı
+# LF'li betiği alır — yani yine bozuk betik. Depo asıl olarak zip olarak
+# indirildiği için baytların depoda zaten CRLF olması gerekir.
 #
-# Not: .bat dosyalarının İÇERİĞİ cp857 (Windows-857) kodlamasındadır ve bu
-# depoda bayt olarak saklanır. Git içeriği normalleştirmez, yalnızca satır
-# sonlarını CRLF'e çevirir. Kodlama denetimi CI'da ayrıca yapılır:
-#     python tools/fix_windows_bat.py
-*.bat  text eol=crlf
-*.cmd  text eol=crlf
+# Regresyon koruması bu dosyaya değil, denetleyiciye bırakıldı:
+#     python3 tools/fix_windows_bat.py --check     # yerelde
+#     CI'da ayrıca gerçek cmd.exe ayrıştırma testi koşar.
+#
+# Not: .bat dosyalarının içeriği cp857 (Windows-857) kodlamasındadır; Türkçe
+# harfler tek bayt olduğu için cmd.exe'nin bayt imleci asla kayamaz.
+*.bat  -text
+*.cmd  -text
 
 # Linux/macOS betikleri LF kalmali; CRLF bash'ta komut bulunamaz hatası verir.
 *.sh   text eol=lf
